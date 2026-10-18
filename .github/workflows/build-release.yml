@@ -1,0 +1,45 @@
+name: Build VidCraftAI for Windows
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Pobierz kod projektu
+        uses: actions/checkout@v4
+
+      - name: Zainstaluj Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Zainstaluj biblioteki
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Zbuduj plik EXE
+        run: |
+          pyinstaller --noconfirm --clean --onefile --windowed --name VidCraftAI --collect-all PySide6 --collect-all imageio_ffmpeg --collect-all faster_whisper --collect-all ctranslate2 app.py
+
+      - name: Udostępnij plik EXE
+        uses: actions/upload-artifact@v4
+        with:
+          name: VidCraftAI-Windows
+          path: dist/VidCraftAI.exe
+
+      - name: Utwórz wydanie na GitHubie
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/VidCraftAI.exe
